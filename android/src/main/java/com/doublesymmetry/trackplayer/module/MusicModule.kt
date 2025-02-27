@@ -5,11 +5,9 @@ import android.content.*
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import android.net.Uri
 import android.support.v4.media.RatingCompat
 import androidx.media3.common.MediaItem
 import androidx.media.utils.MediaConstants
-import androidx.media3.common.MediaMetadata
 import com.lovegaoshi.kotlinaudio.models.Capability
 import com.lovegaoshi.kotlinaudio.models.RepeatMode
 import com.doublesymmetry.trackplayer.model.State
@@ -29,6 +27,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 import javax.annotation.Nonnull
+import androidx.core.net.toUri
 
 
 /**
@@ -139,10 +138,10 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
             isPlayable = hashmap["playable"]?.toInt() != 1,
             title = hashmap["title"],
             mediaId = hashmap["mediaId"] ?: "no-media-id",
-            imageUri = if (iconUri != null) Uri.parse(iconUri) else null,
+            imageUri = iconUri?.toUri(),
             artist = hashmap["subtitle"],
             subtitle = hashmap["subtitle"],
-            sourceUri = if (mediaUri != null) Uri.parse(mediaUri) else null,
+            sourceUri = mediaUri?.toUri(),
             extras = extras
         )
     }
@@ -301,7 +300,7 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
 
         try {
-            val tracks = readableArrayToTrackList(data);
+            val tracks = readableArrayToTrackList(data)
             if (insertBeforeIndex < -1 || insertBeforeIndex > musicService.tracks.size) {
                 callback.reject("index_out_of_bounds", "The track index is out of bounds")
                 return@launchInScope
@@ -324,7 +323,7 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
             callback.resolve(null)
             return@launchInScope
         }
-        val bundle = Arguments.toBundle(data);
+        val bundle = Arguments.toBundle(data)
         if (bundle is Bundle) {
             musicService.load(bundleToTrack(bundle))
             callback.resolve(null)
@@ -346,9 +345,9 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         val inputIndexes = Arguments.toList(data)
         if (inputIndexes != null) {
             val size = musicService.tracks.size
-            val indexes: ArrayList<Int> = ArrayList();
+            val indexes: ArrayList<Int> = ArrayList()
             for (inputIndex in inputIndexes) {
-                val index = if (inputIndex is Int) inputIndex else inputIndex.toString().toInt()
+                val index = inputIndex as? Int ?: inputIndex.toString().toInt()
                 if (index < 0 || index >= size) {
                     callback.reject(
                         "index_out_of_bounds",
@@ -662,9 +661,9 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     fun getProgress(callback: Promise) = launchInScope {
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
         val bundle = Bundle()
-        bundle.putDouble("duration", musicService.getDurationInSeconds());
-        bundle.putDouble("position", musicService.getPositionInSeconds());
-        bundle.putDouble("buffered", musicService.getBufferedPositionInSeconds());
+        bundle.putDouble("duration", musicService.getDurationInSeconds())
+        bundle.putDouble("position", musicService.getPositionInSeconds())
+        bundle.putDouble("buffered", musicService.getBufferedPositionInSeconds())
         callback.resolve(Arguments.fromBundle(bundle))
     }
 
@@ -745,6 +744,7 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
 
     @ReactMethod
     fun setPlaybackState(mediaID: String, callback: Promise) = launchInScope {
+        // TODO: not implemented!
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
         callback.resolve(null)
     }

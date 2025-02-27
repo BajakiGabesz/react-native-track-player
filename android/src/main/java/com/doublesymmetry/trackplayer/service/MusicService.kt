@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Binder
@@ -15,7 +14,6 @@ import android.provider.Settings
 import android.view.KeyEvent
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
-import androidx.core.app.NotificationCompat
 import androidx.media.utils.MediaConstants
 import androidx.media3.common.C
 import androidx.media3.common.Player
@@ -58,6 +56,7 @@ import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
+import androidx.core.net.toUri
 
 @OptIn(UnstableApi::class)
 @MainThread
@@ -116,7 +115,7 @@ class MusicService : HeadlessJsMediaService() {
         val openAppIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             // Add the Uri data so apps can identify that it was a notification click
-            data = Uri.parse("trackplayer://notification.click")
+            data = "trackplayer://notification.click".toUri()
             action = Intent.ACTION_VIEW
         }
         mediaSession = MediaLibrarySession.Builder(this, fakePlayer, APMMediaSessionCallback() )
@@ -403,7 +402,7 @@ class MusicService : HeadlessJsMediaService() {
 
     @MainThread
     fun move(fromIndex: Int, toIndex: Int) {
-        player.move(fromIndex, toIndex);
+        player.move(fromIndex, toIndex)
     }
 
     @MainThread
@@ -621,7 +620,7 @@ class MusicService : HeadlessJsMediaService() {
 
     @Suppress("DEPRECATION")
     fun isForegroundService(): Boolean {
-        val manager = baseContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val manager = baseContext.getSystemService(ACTIVITY_SERVICE) as ActivityManager
         for (service in manager.getRunningServices(Int.MAX_VALUE)) {
             if (MusicService::class.java.name == service.service.className) {
                 return service.foreground
@@ -870,7 +869,7 @@ class MusicService : HeadlessJsMediaService() {
             }
             lastWake = currentTime
             val activityIntent = packageManager.getLaunchIntentForPackage(packageName)
-            activityIntent!!.data = Uri.parse("trackplayer://service-bound")
+            activityIntent!!.data = "trackplayer://service-bound".toUri()
             activityIntent.action = Intent.ACTION_VIEW
             activityIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             var activityOptions = ActivityOptions.makeBasic()
@@ -1067,7 +1066,7 @@ class MusicService : HeadlessJsMediaService() {
             pageSize: Int,
             params: LibraryParams?
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-            emit(MusicEvents.BUTTON_BROWSE, Bundle().apply { putString("mediaId", parentId) });
+            emit(MusicEvents.BUTTON_BROWSE, Bundle().apply { putString("mediaId", parentId) })
             return Futures.immediateFuture(LibraryResult.ofItemList(mediaTree[parentId] ?: listOf(), null))
         }
 

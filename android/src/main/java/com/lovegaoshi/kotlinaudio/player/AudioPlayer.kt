@@ -204,7 +204,7 @@ abstract class AudioPlayer internal constructor(
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(C.USAGE_MEDIA)
             .setContentType(options.audioContentType)
-            .build();
+            .build()
         mPlayer.setAudioAttributes(audioAttributes, options.handleAudioFocus)
 
         return mPlayer
