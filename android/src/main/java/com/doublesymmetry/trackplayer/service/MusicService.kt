@@ -488,6 +488,14 @@ class MusicService : HeadlessJsMediaService() {
     }
 
     @MainThread
+    fun getPitch(): Float = player.playbackPitch
+
+    @MainThread
+    fun setPitch(value: Float) {
+        player.playbackPitch = value
+    }
+
+    @MainThread
     fun getRepeatMode(): RepeatMode = player.repeatMode
 
     @MainThread

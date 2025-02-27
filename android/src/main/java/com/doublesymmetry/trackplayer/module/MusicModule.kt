@@ -536,6 +536,21 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     }
 
     @ReactMethod
+    fun getPitch(callback: Promise) = launchInScope {
+        if (verifyServiceBoundOrReject(callback)) return@launchInScope
+
+        callback.resolve(musicService.getPitch())
+    }
+
+    @ReactMethod
+    fun setPitch(rate: Float, callback: Promise) = launchInScope {
+        if (verifyServiceBoundOrReject(callback)) return@launchInScope
+
+        musicService.setPitch(rate)
+        callback.resolve(null)
+    }
+
+    @ReactMethod
     fun getRate(callback: Promise) = launchInScope {
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
 

@@ -547,6 +547,14 @@ export const fadeOutJump = async (
 export async function setRate(rate: number): Promise<void> {
   return TrackPlayer.setRate(rate);
 }
+/**
+ * Sets the playback pitch. android only
+ *
+ * @param pitch The pitch.
+ */
+export async function setPitch(pitch: number): Promise<void> {
+  return isAndroid ? TrackPlayer.setPitch(pitch) : void 0;
+}
 
 /**
  * Sets the queue.
@@ -585,6 +593,12 @@ export async function getRate(): Promise<number> {
   return TrackPlayer.getRate();
 }
 
+/**
+ * Gets the pitch of the track.
+ */
+export async function getPitch(): Promise<number> {
+  return isAndroid ? TrackPlayer.getPitch() : 1;
+}
 /**
  * Gets a track object from the queue.
  *

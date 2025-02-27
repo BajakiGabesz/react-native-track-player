@@ -10,6 +10,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Player.Listener
 import androidx.media3.common.TrackSelectionParameters
@@ -147,6 +148,12 @@ abstract class AudioPlayer internal constructor(
         get() = exoPlayer.playbackParameters.speed
         set(value) {
             exoPlayer.setPlaybackSpeed(value)
+        }
+
+    var playbackPitch: Float
+        get() = exoPlayer.playbackParameters.pitch
+        set(v) {
+            exoPlayer.playbackParameters = PlaybackParameters(playbackSpeed, v)
         }
 
     val isPlaying
