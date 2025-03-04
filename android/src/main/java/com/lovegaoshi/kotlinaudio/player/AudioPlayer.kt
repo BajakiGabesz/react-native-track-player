@@ -115,7 +115,7 @@ abstract class AudioPlayer internal constructor(
         }
 
     private var volumeMultiplier = 1f
-        private set(value) {
+        set(value) {
             field = value
             volume = volume
         }

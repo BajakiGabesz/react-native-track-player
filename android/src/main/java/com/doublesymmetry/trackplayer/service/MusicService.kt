@@ -2,10 +2,8 @@ package com.doublesymmetry.trackplayer.service
 
 import android.annotation.SuppressLint
 import android.app.*
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.Bundle
@@ -289,6 +287,7 @@ class MusicService : HeadlessJsMediaService() {
             Player.COMMAND_SET_MEDIA_ITEM,
             Player.COMMAND_PREPARE,
             Player.COMMAND_RELEASE,
+            Player.COMMAND_CHANGE_MEDIA_ITEMS,
         )
         notificationCapabilities.forEach {
             when (it) {
