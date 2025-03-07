@@ -41,6 +41,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlin.math.min
 
 abstract class AudioPlayer internal constructor(
     private val context: Context,
@@ -372,10 +373,10 @@ abstract class AudioPlayer internal constructor(
             exoPlayer.setAudioAttributes(exoPlayer.audioAttributes, options.handleAudioFocus)
             if (fadeToVolume > 0) {
                 var fadeInDuration = fadeDuration
-                val volumeDiff = fadeToVolume * fadeInterval / fadeInDuration
+                val startTime = System.currentTimeMillis()
                 while (fadeInDuration > 0) {
                     fadeInDuration -= fadeInterval
-                    exoPlayer.volume += volumeDiff
+                    exoPlayer.volume = fadeToVolume * min((System.currentTimeMillis() - startTime), fadeDuration) / fadeDuration
                     delay(fadeInterval)
                 }
             }
