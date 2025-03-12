@@ -358,10 +358,11 @@ abstract class AudioPlayer internal constructor(
         player.switchCrossFadePlayer()
         scope.launch {
             var fadeOutDuration = fadeDuration
-            val volumeDiff = -prevPlayer.volume * fadeInterval / fadeOutDuration
+            val startFadeOutTime = System.currentTimeMillis()
+            val fadeFromVolume = prevPlayer.volume
             while (fadeOutDuration > 0) {
                 fadeOutDuration -= fadeInterval
-                prevPlayer.volume += volumeDiff
+                prevPlayer.volume = fadeFromVolume * (1 - min((System.currentTimeMillis() - startTime), fadeDuration) / fadeDuration)
                 delay(fadeInterval)
             }
             prevPlayer.volume = 0f
