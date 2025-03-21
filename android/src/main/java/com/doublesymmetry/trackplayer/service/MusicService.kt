@@ -1149,9 +1149,17 @@ class MusicService : HeadlessJsMediaService() {
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
-            emit(MusicEvents.PLAYBACK_RESUME, Bundle().apply {
-                putString("package", controller.packageName)
-            })
+            Timber.tag("APM").d("triggered onPlaybackResumption")
+            try {
+                this@MusicService.player
+                emit(MusicEvents.PLAYBACK_RESUME, Bundle().apply {
+                    putString("package", controller.packageName)
+                })
+            } catch (e: Exception) {
+                // player has not been initialized; forcefully trigger onStartCommand
+                // TODO: emit event after the player is initialized?
+                this@MusicService.onStartCommand(null, 0, 0)
+            }
             return super.onPlaybackResumption(mediaSession, controller)
         }
     }
