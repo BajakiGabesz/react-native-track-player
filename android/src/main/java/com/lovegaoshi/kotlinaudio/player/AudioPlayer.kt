@@ -362,7 +362,7 @@ abstract class AudioPlayer internal constructor(
             val fadeFromVolume = prevPlayer.volume
             while (fadeOutDuration > 0) {
                 fadeOutDuration -= fadeInterval
-                prevPlayer.volume = fadeFromVolume * (1 - min((System.currentTimeMillis() - startTime), fadeDuration) / fadeDuration)
+                prevPlayer.volume = fadeFromVolume * (1 - min((System.currentTimeMillis() - startFadeOutTime), fadeDuration) / fadeDuration)
                 delay(fadeInterval)
             }
             prevPlayer.volume = 0f
