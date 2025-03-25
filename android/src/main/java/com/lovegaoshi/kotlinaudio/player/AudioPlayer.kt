@@ -1,4 +1,4 @@
-    @file: OptIn(UnstableApi::class) package com.lovegaoshi.kotlinaudio.player
+@file: OptIn(UnstableApi::class) package com.lovegaoshi.kotlinaudio.player
 
 import android.content.Context
 import android.media.AudioManager
@@ -358,10 +358,11 @@ abstract class AudioPlayer internal constructor(
         player.switchCrossFadePlayer()
         scope.launch {
             var fadeOutDuration = fadeDuration
-            val volumeDiff = -prevPlayer.volume * fadeInterval / fadeOutDuration
+            val startFadeOutTime = System.currentTimeMillis()
+            val fadeFromVolume = prevPlayer.volume
             while (fadeOutDuration > 0) {
                 fadeOutDuration -= fadeInterval
-                prevPlayer.volume += volumeDiff
+                prevPlayer.volume = fadeFromVolume * (1 - min((System.currentTimeMillis() - startFadeOutTime), fadeDuration).toFloat() / fadeDuration)
                 delay(fadeInterval)
             }
             prevPlayer.volume = 0f
