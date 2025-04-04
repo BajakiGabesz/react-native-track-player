@@ -73,7 +73,7 @@ class MusicService : HeadlessJsMediaService() {
     private var playerCommands: Player.Commands? = null
     private var customLayout: List<CommandButton> = listOf()
     private var lastWake: Long = 0
-    var onStartCommandIntentValid: Boolean = true
+    var lastConnectedPackage: String = ""
 
     fun crossFadePrepare(previous: Boolean = false) { player.crossFadePrepare(previous) }
 
@@ -173,7 +173,6 @@ class MusicService : HeadlessJsMediaService() {
     private var commandStarted = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        onStartCommandIntentValid = intent != null
         Timber.tag("APM").d("onStartCommand: ${intent?.action}, ${intent?.`package`}")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             // HACK: this is not supposed to be here. I definitely screwed up. but Why?
@@ -1005,6 +1004,7 @@ class MusicService : HeadlessJsMediaService() {
                     // Android Auto
                     "com.google.android.projection.gearhead"
                 )) {
+                lastConnectedPackage = controller.packageName
                 // HACK: attempt to wake up activity (for legacy APM). if not, start headless.
                 if (!selfWake(controller.packageName)) {
                     onStartCommand(null, 0, 0)

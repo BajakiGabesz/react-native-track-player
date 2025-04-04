@@ -786,9 +786,9 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     }
     
     @ReactMethod
-    fun validateOnStartCommandIntent(callback: Promise) = launchInScope {
+    fun getLastConnectedPackage(callback: Promise) = launchInScope {
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
-        callback.resolve(musicService.onStartCommandIntentValid)
+        callback.resolve(musicService.lastConnectedPackage)
     }
 
     // Bridgeless interop layer tries to pass the `Job` from `scope.launch` to the JS side

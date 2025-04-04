@@ -792,10 +792,12 @@ export async function crossFade(
 }
 
 /**
- * get onStartCommandIntent is null or not (Android only.). this is used to identify
- * if musicservice is restarted or not.
+ * get the last connected package. non android will return undefined.
+ * android without a connected package (either system.UI, android auto, or media controller) yet
+ * will return ''; else will be one of the three.
+ * I intend to use this to determine if app crashed from android auto.
  */
-export async function validateOnStartCommandIntent(): Promise<boolean> {
-  if (!isAndroid) return true;
-  return TrackPlayer.validateOnStartCommandIntent();
+export async function getLastConnectedPackage(): Promise<string | undefined> {
+  if (!isAndroid) return;
+  return TrackPlayer.getLastConnectedPackage();
 }
