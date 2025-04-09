@@ -91,7 +91,7 @@ class MusicService : HeadlessJsMediaService() {
 
     fun acquireWakeLock() { acquireWakeLockNow(this) }
 
-    fun abandonWakeLock() { sWakeLock?.release() }
+    fun abandonWakeLock() { wakeLock?.release() }
 
     fun getBitmapLoader(): BitmapLoader {
         return mediaSession.bitmapLoader
