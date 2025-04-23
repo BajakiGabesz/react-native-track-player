@@ -193,6 +193,7 @@ class MusicService : HeadlessJsMediaService() {
             return
         }
         Timber.tag("APM").d("RNTP musicservice set up")
+        val fftSampleRate = playerOptions?.getDouble(USE_FFT_PROCESSOR)?.toInt() ?: 0
         val mPlayerOptions = PlayerOptions(
             crossfade = playerOptions?.getBoolean(CROSSFADE, false) ?: false,
             cacheSize = playerOptions?.getDouble(MAX_CACHE_SIZE_KEY)?.toLong() ?: 0,
@@ -208,7 +209,7 @@ class MusicService : HeadlessJsMediaService() {
             handleAudioBecomingNoisy = playerOptions?.getBoolean(HANDLE_NOISY, true) ?: true,
             alwaysShowNext = playerOptions?.getBoolean(ALWAYS_SHOW_NEXT, true) ?: true,
             handleAudioFocus = playerOptions?.getBoolean(AUTO_HANDLE_INTERRUPTIONS) ?: true,
-
+            useFFTProcessor = fftSampleRate,
             bufferOptions = BufferOptions(
                 playerOptions?.getDouble(MIN_BUFFER_KEY)?.toMilliseconds()?.toInt(),
                 playerOptions?.getDouble(MAX_BUFFER_KEY)?.toMilliseconds()?.toInt(),
@@ -219,6 +220,11 @@ class MusicService : HeadlessJsMediaService() {
             skipSilence = playerOptions?.getBoolean(SKIP_SILENCE) ?: false
         )
         player = QueuedAudioPlayer(this@MusicService, mPlayerOptions)
+        player.fftEmitter = {v -> emit(MusicEvents.FFT_UPDATED, Bundle().apply {
+            // pass the raw data: putDoubleArray("data", v)
+            putDoubleArray("data", v)
+
+        })}
         fakePlayer.release()
         mediaSession.player = player.player
         observeEvents()
@@ -1206,6 +1212,7 @@ class MusicService : HeadlessJsMediaService() {
         const val PAUSE_ON_INTERRUPTION_KEY = "alwaysPauseOnInterruption"
         const val AUTO_UPDATE_METADATA = "autoUpdateMetadata"
         const val AUTO_HANDLE_INTERRUPTIONS = "autoHandleInterruptions"
+        const val USE_FFT_PROCESSOR = "useFFTProcessor"
         const val ANDROID_AUDIO_CONTENT_TYPE = "androidAudioContentType"
         const val IS_FOCUS_LOSS_PERMANENT_KEY = "permanent"
         const val IS_PAUSED_KEY = "paused"

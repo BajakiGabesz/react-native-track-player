@@ -30,15 +30,18 @@ import com.lovegaoshi.kotlinaudio.models.PlaybackError
 import com.lovegaoshi.kotlinaudio.models.PlayerOptions
 import com.lovegaoshi.kotlinaudio.models.PositionChangedReason
 import com.lovegaoshi.kotlinaudio.models.setWakeMode
+import com.lovegaoshi.kotlinaudio.player.components.APMRenderersFactory
 import com.lovegaoshi.kotlinaudio.player.components.Cache
 import com.lovegaoshi.kotlinaudio.player.components.FocusManager
 import com.lovegaoshi.kotlinaudio.player.components.MediaFactory
 import com.lovegaoshi.kotlinaudio.player.components.setupBuffer
+import com.lovegaoshi.kotlinaudio.processors.FFTEmitter
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
@@ -61,6 +64,7 @@ abstract class AudioPlayer internal constructor(
     val playerEventHolder = PlayerEventHolder()
     private val focusListener = APMFocusListener()
     private val focusManager = FocusManager(context, listener=focusListener, options=options)
+    var fftEmitter: (DoubleArray) -> Unit = { v -> Timber.tag("APMFFT").d("FFT emitted $v") }
 
     var alwaysPauseOnInterruption: Boolean
         get() = focusManager.alwaysPauseOnInterruption
@@ -187,7 +191,20 @@ abstract class AudioPlayer internal constructor(
     }
 
     private fun initExoPlayer(name: String): ExoPlayer {
-        val renderer = DefaultRenderersFactory(context)
+        // HACK: horrible memleak, but I cant think of how to track exoplayers
+        val nameHolder = arrayOf("")
+        val renderer = if (options.useFFTProcessor > 0) APMRenderersFactory(
+            context, options.useFFTProcessor, object: FFTEmitter {
+                override fun onSpectrumReady(spectrum: FloatArray, maxRawAmp: Float) {
+                    return
+                }
+                override fun onFrequencyFFTReady(fft: DoubleArray, max: Float) {
+                    if (this@AudioPlayer.exoPlayer.toString() == nameHolder[0]) {
+                        fftEmitter(fft)
+                    }
+                }
+
+        }) else DefaultRenderersFactory(context)
         renderer.setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
         val mPlayer = ExoPlayer
             .Builder(context)
@@ -201,13 +218,12 @@ abstract class AudioPlayer internal constructor(
             .setSkipSilenceEnabled(options.skipSilence)
             .setName(name)
             .build()
-
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(C.USAGE_MEDIA)
             .setContentType(options.audioContentType)
             .build()
         mPlayer.setAudioAttributes(audioAttributes, options.handleAudioFocus)
-
+        nameHolder[0] = mPlayer.toString()
         return mPlayer
     }
 
