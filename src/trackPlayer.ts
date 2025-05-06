@@ -818,7 +818,7 @@ export async function setEqualizerPreset(preset = 0) {
 /**
  * android only. get the current equalizer preset index (int).
  */
-export async function getCurrentEqualizerPreset() {
+export async function getCurrentEqualizerPreset(): Promise<number> {
   if (!isAndroid) return -1;
   return TrackPlayer.getCurrentEqualizerPreset();
 }
