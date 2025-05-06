@@ -2,6 +2,8 @@
 
 import android.content.Context
 import android.media.AudioManager
+import android.media.audiofx.Equalizer
+import android.media.audiofx.LoudnessEnhancer
 import androidx.annotation.CallSuper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -54,6 +56,8 @@ abstract class AudioPlayer internal constructor(
     // for crossfading
     private var exoPlayer1: ExoPlayer
     private var exoPlayer2: ExoPlayer? = null
+    private var loudnessEnhancers = ArrayList<LoudnessEnhancer>()
+    private var equalizers = ArrayList<Equalizer>()
     private var currentExoPlayer = true
 
     var exoPlayer: ExoPlayer
@@ -224,6 +228,8 @@ abstract class AudioPlayer internal constructor(
             .build()
         mPlayer.setAudioAttributes(audioAttributes, options.handleAudioFocus)
         nameHolder[0] = mPlayer.toString()
+        loudnessEnhancers.add(LoudnessEnhancer(mPlayer.audioSessionId))
+        equalizers.add(Equalizer(0, mPlayer.audioSessionId))
         return mPlayer
     }
 
@@ -257,6 +263,35 @@ abstract class AudioPlayer internal constructor(
     open fun load(item: AudioItem) {
         players().forEach { p -> p.addMediaItem(audioItem2MediaItem(item)) }
         exoPlayer.prepare()
+    }
+
+    fun setLoudnessEnhance(gain: Int) {
+        loudnessEnhancers.forEach { l ->
+            l.setTargetGain(gain)
+            l.enabled = true
+        }
+    }
+
+    fun setEqualizerPreset(preset: Int) {
+        equalizers.forEach { equalizer ->
+            equalizer.usePreset(preset.toShort())
+            equalizer.enabled = true
+        }
+    }
+
+    fun getCurrentEQPreset(): Int {
+        if (equalizers.isEmpty()) {
+            return -1
+        }
+        return equalizers[0].currentPreset.toInt()
+    }
+
+    fun getEqualizerPresets(): List<String> {
+        if (equalizers.isEmpty()) {
+            return arrayListOf()
+        }
+        return Array(equalizers[0].numberOfPresets.toInt()) { i -> i }
+            .map { i -> equalizers[0].getPresetName(i.toShort()) }
     }
 
     fun togglePlaying() {
@@ -326,6 +361,8 @@ abstract class AudioPlayer internal constructor(
             p.removeListener(playerListener)
             p.release()
         }
+        equalizers.forEach { e -> e.release() }
+        loudnessEnhancers.forEach { e -> e.release() }
         cache?.release()
         cache = null
     }
