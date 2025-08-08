@@ -24,7 +24,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          
+
+      - name: enable corepack
+        run: corepack enable
+        
       - name: Install dependencies
         run: yarn; yarn build; cd example; yarn; cd ios; pod install
 
@@ -50,7 +53,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
+     
+      - name: enable corepack
+        run: corepack enable
+        
       - name: Install dependencies
         run: yarn; yarn build; cd example; yarn
 
