@@ -6,7 +6,7 @@ on:
       - 'APM'
 jobs:
   buildIPA:
-    runs-on: macos-14
+    runs-on: macos-15
     name: build IPA
     permissions:
       contents: write
@@ -23,11 +23,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Setup Yarn
-        uses: threeal/setup-yarn-action@v2.0.0
-
+          node-version: '22'
+          cache: 'yarn'
+          
       - name: Install dependencies
         run: yarn; yarn build; cd example; yarn; cd ios; pod install
 
@@ -48,14 +46,12 @@ jobs:
         with:
           java-version: 18
           distribution: temurin
-
+          
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Setup Yarn
-        uses: threeal/setup-yarn-action@v2.0.0
+          node-version: '22'
+          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn; yarn build; cd example; yarn
