@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - 'APM'
+  pull_request:
+    branches:
+      - 'APM'
 jobs:
   buildIPA:
     runs-on: macos-15
