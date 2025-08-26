@@ -61,7 +61,7 @@ jobs:
         run: yarn; yarn build; cd example; yarn
 
       - name: gradle build AAB
-        run: cd example/android && chmod +x gradlew && ./gradlew assembleRelease
+        run: cd example/android && chmod +x gradlew && ./gradlew generateCodegenArtifactsFromSchema --rerun-tasks && ./gradlew assembleRelease
 
       - name: Upload Android Artifacts
         uses: actions/upload-artifact@v4
