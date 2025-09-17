@@ -29,6 +29,7 @@ import timber.log.Timber
 import java.util.*
 import androidx.core.net.toUri
 import com.facebook.react.module.annotations.ReactModule
+import com.lovegaoshi.kotlinaudio.models.AudioPlayerState
 
 
 /**
