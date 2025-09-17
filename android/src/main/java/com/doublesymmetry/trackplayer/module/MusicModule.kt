@@ -763,6 +763,10 @@ class MusicModule(reactContext: ReactApplicationContext) : NativeTrackPlayerSpec
         callback.resolve(musicService.lastConnectedPackage)
     }
 
+    fun isPlaying(): Boolean {
+        return musicService.state == AudioPlayerState.PLAYING
+    }
+
     // Bridgeless interop layer tries to pass the `Job` from `scope.launch` to the JS side
     // which causes an exception. We can work around this using a wrapper.
     private fun launchInScope(block: suspend () -> Unit) {
