@@ -19,6 +19,15 @@ import type { RemotePlaySearchEvent } from './RemotePlaySearchEvent';
 import type { RemoteSeekEvent } from './RemoteSeekEvent';
 import type { RemoteSetRatingEvent } from './RemoteSetRatingEvent';
 import type { RemoteSkipEvent } from './RemoteSkipEvent';
+import type { PlaybackAnimatedVolumeChangedEvent } from './PlaybackAnimatedVolumeChangedEvent';
+import type { RemoteBrowseEvent } from './RemoteBrowseEvent';
+import type { RemoteCustomActionEvent } from './RemoteCustomActionEvent';
+import type { PlaybackResumeEvent } from './PlaybackResumeEvent';
+import type {
+  ControllerConnectedEvent,
+  ControllerDisconnectedEvent,
+} from './ControllerConnectedEvent';
+import type { FFTUpdateEvent } from './FFTUpdateEvent';
 
 export type EventPayloadByEvent = {
   [Event.PlayerError]: PlayerErrorEvent;
@@ -31,6 +40,7 @@ export type EventPayloadByEvent = {
   [Event.PlaybackPlayWhenReadyChanged]: PlaybackPlayWhenReadyChangedEvent;
   [Event.PlaybackProgressUpdated]: PlaybackProgressUpdatedEvent;
   [Event.RemotePlay]: never;
+  [Event.RemotePlayPause]: never;
   [Event.RemotePlayId]: RemotePlayIdEvent;
   [Event.RemotePlaySearch]: RemotePlaySearchEvent;
   [Event.RemotePause]: never;
@@ -46,9 +56,16 @@ export type EventPayloadByEvent = {
   [Event.RemoteLike]: never;
   [Event.RemoteDislike]: never;
   [Event.RemoteBookmark]: never;
+  [Event.PlaybackAnimatedVolumeChanged]: PlaybackAnimatedVolumeChangedEvent;
+  [Event.RemoteBrowse]: RemoteBrowseEvent;
+  [Event.PlaybackResume]: PlaybackResumeEvent;
+  [Event.RemoteCustomAction]: RemoteCustomActionEvent;
   [Event.MetadataChapterReceived]: AudioMetadataReceivedEvent;
   [Event.MetadataTimedReceived]: AudioMetadataReceivedEvent;
   [Event.MetadataCommonReceived]: AudioCommonMetadataReceivedEvent;
+  [Event.connectorConnected]: ControllerConnectedEvent;
+  [Event.connectorDisconnected]: ControllerDisconnectedEvent;
+  [Event.fftUpdate]: FFTUpdateEvent;
 };
 
 // eslint-disable-next-line

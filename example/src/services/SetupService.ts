@@ -9,11 +9,12 @@ export const DefaultAudioServiceBehaviour =
   AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification;
 
 const setupPlayer = async (
-  options: Parameters<typeof TrackPlayer.setupPlayer>[0]
+  options: Parameters<typeof TrackPlayer.setupPlayer>[0],
+  background = false
 ) => {
   const setup = async () => {
     try {
-      await TrackPlayer.setupPlayer(options);
+      await TrackPlayer.setupPlayer(options, background);
     } catch (error) {
       return (error as Error & { code?: string }).code;
     }
@@ -26,13 +27,19 @@ const setupPlayer = async (
   }
 };
 
-export const SetupService = async () => {
-  await setupPlayer({
-    autoHandleInterruptions: true,
-  });
+export const SetupService = async (background = false) => {
+  await setupPlayer(
+    {
+      autoHandleInterruptions: true,
+      crossfade: true,
+      useFFTProcessor: 4096,
+    },
+    background
+  );
   await TrackPlayer.updateOptions({
     android: {
       appKilledPlaybackBehavior: DefaultAudioServiceBehaviour,
+      stopForegroundGracePeriod: 999999999,
     },
     // This flag is now deprecated. Please use the above to define playback mode.
     // stoppingAppPausesPlayback: true,
@@ -42,13 +49,32 @@ export const SetupService = async () => {
       Capability.SkipToNext,
       Capability.SkipToPrevious,
       Capability.SeekTo,
+      Capability.JumpBackward,
     ],
     compactCapabilities: [
       Capability.Play,
       Capability.Pause,
-      Capability.SkipToNext,
+      // Capability.SkipToNext,
+    ],
+    notificationCapabilities: [
+      Capability.Play,
+      Capability.Pause,
+      Capability.SeekTo,
+      Capability.JumpBackward,
     ],
     progressUpdateEventInterval: 2,
+    customActions: {
+      customActionsList: [
+        'customAction1',
+        'customAction2',
+        'customAction3',
+        'customAction4',
+      ],
+      customAction1: 1,
+      customAction2: 0,
+      customAction3: 2,
+      customAction4: 3,
+    },
   });
   await TrackPlayer.setRepeatMode(DefaultRepeatMode);
 };

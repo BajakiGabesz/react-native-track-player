@@ -1,5 +1,4 @@
-import { NativeModules } from 'react-native';
-const { TrackPlayerModule: TrackPlayer } = NativeModules;
+import {Constants as TrackPlayer} from '../../specs/NativeTrackPlayer';
 
 export enum PitchAlgorithm {
   /**

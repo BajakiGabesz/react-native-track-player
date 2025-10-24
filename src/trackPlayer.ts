@@ -1,14 +1,12 @@
 import {
   AppRegistry,
-  DeviceEventEmitter,
   NativeEventEmitter,
-  NativeModules,
   Platform,
+  Animated,
 } from 'react-native';
-// @ts-expect-error because resolveAssetSource is untyped
-import { default as resolveAssetSource } from 'react-native/Libraries/Image/resolveAssetSource';
 
-import { Event, RepeatMode, State } from './constants';
+import { Event, RepeatMode, State, AndroidAutoContentStyle } from './constants';
+import TrackPlayer from '../specs/NativeTrackPlayer';
 import type {
   AddTrack,
   EventPayloadByEvent,
@@ -20,13 +18,17 @@ import type {
   Track,
   TrackMetadataBase,
   UpdateOptions,
+  AndroidAutoBrowseTree,
 } from './interfaces';
+import resolveAssetSource from './resolveAssetSource';
 
-const { TrackPlayerModule: TrackPlayer } = NativeModules;
-const emitter =
-  Platform.OS !== 'android'
-    ? new NativeEventEmitter(TrackPlayer)
-    : DeviceEventEmitter;
+const isAndroid = Platform.OS === 'android';
+
+const emitter = new NativeEventEmitter(TrackPlayer);
+
+const animatedVolume = new Animated.Value(1);
+
+animatedVolume.addListener((state) => TrackPlayer.setVolume(state.value));
 
 // MARK: - Helpers
 
@@ -34,13 +36,13 @@ function resolveImportedAssetOrPath(pathOrAsset: string | number | undefined) {
   return pathOrAsset === undefined
     ? undefined
     : typeof pathOrAsset === 'string'
-    ? pathOrAsset
-    : resolveImportedAsset(pathOrAsset)?.uri;
+      ? pathOrAsset
+      : resolveImportedAsset(pathOrAsset);
 }
 
 function resolveImportedAsset(id?: number) {
   return id
-    ? (resolveAssetSource(id) as { uri: string } | null) ?? undefined
+    ? ((resolveAssetSource(id) as { uri: string } | null) ?? undefined)
     : undefined;
 }
 
@@ -57,17 +59,22 @@ function resolveImportedAsset(id?: number) {
  * @param options The options to initialize the player with.
  * @see https://rntp.dev/docs/api/functions/lifecycle
  */
-export async function setupPlayer(options: PlayerOptions = {}): Promise<void> {
-  return TrackPlayer.setupPlayer(options);
+export async function setupPlayer(
+  options: PlayerOptions = {},
+  background = false,
+): Promise<void> {
+  return TrackPlayer.setupPlayer(options, background);
 }
 
 /**
  * Register the playback service. The service will run as long as the player runs.
  */
 export function registerPlaybackService(factory: () => ServiceHandler) {
-  if (Platform.OS === 'android') {
+  if (isAndroid) {
     // Registers the headless task
     AppRegistry.registerHeadlessTask('TrackPlayer', factory);
+  } else if (Platform.OS === 'web') {
+    factory()();
   } else {
     // Initializes and runs the service in the next tick
     setImmediate(factory());
@@ -78,16 +85,9 @@ export function addEventListener<T extends Event>(
   event: T,
   listener: EventPayloadByEvent[T] extends never
     ? () => void
-    : (event: EventPayloadByEvent[T]) => void
+    : (event: EventPayloadByEvent[T]) => void,
 ) {
   return emitter.addListener(event, listener);
-}
-
-/**
- * @deprecated This method should not be used, most methods reject when service is not bound.
- */
-export function isServiceRunning(): Promise<boolean> {
-  return TrackPlayer.isServiceRunning();
 }
 
 // MARK: - Queue API
@@ -101,7 +101,7 @@ export function isServiceRunning(): Promise<boolean> {
  */
 export async function add(
   tracks: AddTrack[],
-  insertBeforeIndex?: number
+  insertBeforeIndex?: number,
 ): Promise<number | void>;
 /**
  * Adds a track to the queue.
@@ -112,18 +112,18 @@ export async function add(
  */
 export async function add(
   track: AddTrack,
-  insertBeforeIndex?: number
+  insertBeforeIndex?: number,
 ): Promise<number | void>;
 export async function add(
   tracks: AddTrack | AddTrack[],
-  insertBeforeIndex = -1
+  insertBeforeIndex = -1,
 ): Promise<number | void> {
   const resolvedTracks = (Array.isArray(tracks) ? tracks : [tracks]).map(
     (track) => ({
       ...track,
       url: resolveImportedAssetOrPath(track.url),
       artwork: resolveImportedAssetOrPath(track.artwork),
-    })
+    }),
   );
   return resolvedTracks.length < 1
     ? undefined
@@ -172,7 +172,7 @@ export async function remove(indexes: number[]): Promise<void>;
 export async function remove(index: number): Promise<void>;
 export async function remove(indexOrIndexes: number | number[]): Promise<void> {
   return TrackPlayer.remove(
-    Array.isArray(indexOrIndexes) ? indexOrIndexes : [indexOrIndexes]
+    Array.isArray(indexOrIndexes) ? indexOrIndexes : [indexOrIndexes],
   );
 }
 
@@ -237,8 +237,8 @@ export async function updateOptions({
     stopIcon: resolveImportedAsset(options.stopIcon),
     previousIcon: resolveImportedAsset(options.previousIcon),
     nextIcon: resolveImportedAsset(options.nextIcon),
-    rewindIcon: resolveImportedAsset(options.rewindIcon),
-    forwardIcon: resolveImportedAsset(options.forwardIcon),
+    // rewindIcon: resolveImportedAsset(options.rewindIcon),
+    // forwardIcon: resolveImportedAsset(options.forwardIcon),
   });
 }
 
@@ -251,7 +251,7 @@ export async function updateOptions({
  */
 export async function updateMetadataForTrack(
   trackIndex: number,
-  metadata: TrackMetadataBase
+  metadata: TrackMetadataBase,
 ): Promise<void> {
   return TrackPlayer.updateMetadataForTrack(trackIndex, {
     ...metadata,
@@ -260,20 +260,11 @@ export async function updateMetadataForTrack(
 }
 
 /**
- * @deprecated Nominated for removal in the next major version. If you object
- * to this, please describe your use-case in the following issue:
- * https://github.com/doublesymmetry/react-native-track-player/issues/1653
- */
-export function clearNowPlayingMetadata(): Promise<void> {
-  return TrackPlayer.clearNowPlayingMetadata();
-}
-
-/**
  * Updates the metadata content of the notification (Android) and the Now Playing Center (iOS)
  * without affecting the data stored for the current track.
  */
 export function updateNowPlayingMetadata(
-  metadata: NowPlayingMetadata
+  metadata: NowPlayingMetadata,
 ): Promise<void> {
   return TrackPlayer.updateNowPlayingMetadata({
     ...metadata,
@@ -312,18 +303,18 @@ export async function stop(): Promise<void> {
 }
 
 /**
- * Sets wether the player will play automatically when it is ready to do so.
+ * Sets whether the player will play automatically when it is ready to do so.
  * This is the equivalent of calling `TrackPlayer.play()` when `playWhenReady = true`
  * or `TrackPlayer.pause()` when `playWhenReady = false`.
  */
 export async function setPlayWhenReady(
-  playWhenReady: boolean
+  playWhenReady: boolean,
 ): Promise<boolean> {
   return TrackPlayer.setPlayWhenReady(playWhenReady);
 }
 
 /**
- * Gets wether the player will play automatically when it is ready to do so.
+ * Gets whether the player will play automatically when it is ready to do so.
  */
 export async function getPlayWhenReady(): Promise<boolean> {
   return TrackPlayer.getPlayWhenReady();
@@ -357,6 +348,176 @@ export async function setVolume(level: number): Promise<void> {
 }
 
 /**
+ * Sets the volume of the player with a simple linear scaling.
+ * In Android this is achieved via a native thread call.
+ * In other platforms this is achieved via RN's Animated.Value.
+ *
+ * @param volume The volume as a number between 0 and 1.
+ * @param duration The duration of the animation in milliseconds. defualt is 0 ms, which just functions as TP.setVolume.
+ * @param init The initial value of the volume. This may be useful eg to be 0 for a fade in event.
+ * @param interval The interval of the animation in milliseconds. default is 20 ms.
+ * @param msg (Android) The message to be emitted after volume is fully changed, via Event.PlaybackAnimatedVolumeChanged.
+ * @param callback (other platforms) The callback to be called after volume is fully changed.
+ */
+export const setAnimatedVolume = async ({
+  volume,
+  duration = 0,
+  init = -1,
+  interval = 20,
+  msg = '',
+  callback = () => undefined,
+}: {
+  volume: number;
+  duration?: number;
+  init?: number;
+  interval?: number;
+  msg?: string;
+  callback?: () => void | Promise<void>;
+}) => {
+  if (duration === 0) {
+    TrackPlayer.setVolume(volume);
+    return callback();
+  }
+  if (init !== -1) {
+    TrackPlayer.setVolume(init);
+  }
+  if (isAndroid) {
+    return TrackPlayer.setAnimatedVolume(volume, duration, interval, msg);
+  } else {
+    /*
+    TODO: Animated.value change relies on React rendering so Android
+    headlessJS will not work with it. however does iOS and windows work in the background?
+    if not this code block is needed 
+    if (AppState.currentState !== 'active') {
+      // need to figure out a way to run Animated.timing in background. probably needs our own module
+      duration = 0;
+    }
+    */
+    volume = Math.min(volume, 1);
+    if (duration === 0) {
+      animatedVolume.setValue(volume);
+      callback();
+      return;
+    }
+    animatedVolume.stopAnimation();
+    Animated.timing(animatedVolume, {
+      toValue: volume,
+      useNativeDriver: true,
+      duration,
+    }).start(() => callback());
+  }
+};
+
+/**
+ * performs fading out to pause playback.
+ * @param duration duration of the fade progress in ms
+ * @param interval interval of the fade progress in ms
+ */
+export const fadeOutPause = async (duration = 500, interval = 20) => {
+  if (isAndroid) {
+    TrackPlayer.fadeOutPause(duration, interval);
+  } else {
+    setAnimatedVolume({
+      duration,
+      interval,
+      volume: 0,
+      callback: () => pause(),
+    });
+  }
+};
+
+/**
+ * performs fading into playing the next track.
+ * @param duration duration of the fade progress in ms
+ * @param interval interval of the fade progress in ms
+ * @param toVolume volume to fade into
+ */
+export const fadeOutNext = async (
+  duration = 500,
+  interval = 20,
+  toVolume = 1,
+) => {
+  if (isAndroid) {
+    TrackPlayer.fadeOutNext(duration, interval, toVolume);
+  } else {
+    setAnimatedVolume({
+      duration,
+      interval,
+      volume: 0,
+      callback: async () => {
+        await skipToNext();
+        setAnimatedVolume({
+          duration,
+          interval,
+          volume: toVolume,
+        });
+      },
+    });
+  }
+};
+
+/**
+ * performs fading into playing the previous track.
+ * @param duration duration of the fade progress in ms
+ * @param interval interval of the fade progress in ms
+ * @param toVolume volume to fade into
+ */
+export const fadeOutPrevious = async (
+  duration = 500,
+  interval = 20,
+  toVolume = 1,
+) => {
+  if (isAndroid) {
+    TrackPlayer.fadeOutPrevious(duration, interval, toVolume);
+  } else {
+    setAnimatedVolume({
+      duration,
+      interval,
+      volume: 0,
+      callback: async () => {
+        await skipToPrevious();
+        setAnimatedVolume({
+          duration,
+          interval,
+          volume: toVolume,
+        });
+      },
+    });
+  }
+};
+
+/**
+ * performs fading into skipping to a track.
+ * @param index the index of the track to skip to
+ * @param duration duration of the fade progress in ms
+ * @param interval interval of the fade progress in ms
+ * @param toVolume volume to fade into
+ */
+export const fadeOutJump = async (
+  index: number,
+  duration = 500,
+  interval = 20,
+  toVolume = 1,
+) => {
+  if (isAndroid) {
+    TrackPlayer.fadeOutJump(index, duration, interval, toVolume);
+  } else {
+    setAnimatedVolume({
+      duration,
+      interval,
+      volume: 0,
+      callback: async () => {
+        await skip(index);
+        setAnimatedVolume({
+          duration,
+          interval,
+          volume: toVolume,
+        });
+      },
+    });
+  }
+};
+/**
  * Sets the playback rate.
  *
  * @param rate The playback rate to change to, where 0.5 would be half speed,
@@ -364,6 +525,14 @@ export async function setVolume(level: number): Promise<void> {
  */
 export async function setRate(rate: number): Promise<void> {
   return TrackPlayer.setRate(rate);
+}
+/**
+ * Sets the playback pitch. android only
+ *
+ * @param pitch The pitch.
+ */
+export async function setPitch(pitch: number): Promise<void> {
+  return isAndroid ? TrackPlayer.setPitch(pitch) : void 0;
 }
 
 /**
@@ -404,6 +573,12 @@ export async function getRate(): Promise<number> {
 }
 
 /**
+ * Gets the pitch of the track.
+ */
+export async function getPitch(): Promise<number> {
+  return isAndroid ? TrackPlayer.getPitch() : 1;
+}
+/**
  * Gets a track object from the queue.
  *
  * @param index The index of the track.
@@ -411,6 +586,7 @@ export async function getRate(): Promise<number> {
  * index.
  */
 export async function getTrack(index: number): Promise<Track | undefined> {
+  // @ts-expect-error codegen issues
   return TrackPlayer.getTrack(index);
 }
 
@@ -418,6 +594,7 @@ export async function getTrack(index: number): Promise<Track | undefined> {
  * Gets the whole queue.
  */
 export async function getQueue(): Promise<Track[]> {
+  // @ts-expect-error codegen issues
   return TrackPlayer.getQueue();
 }
 
@@ -433,41 +610,8 @@ export async function getActiveTrackIndex(): Promise<number | undefined> {
  * Gets the active track or undefined if there is no current track.
  */
 export async function getActiveTrack(): Promise<Track | undefined> {
+  // @ts-expect-error codegen issues
   return (await TrackPlayer.getActiveTrack()) ?? undefined;
-}
-
-/**
- * Gets the index of the current track or null if there is no current track.
- *
- * @deprecated use `TrackPlayer.getActiveTrackIndex()` instead.
- */
-export async function getCurrentTrack(): Promise<number | null> {
-  return TrackPlayer.getActiveTrackIndex();
-}
-
-/**
- * Gets the duration of the current track in seconds.
- * @deprecated Use `TrackPlayer.getProgress().then((progress) => progress.duration)` instead.
- */
-export async function getDuration(): Promise<number> {
-  return TrackPlayer.getDuration();
-}
-
-/**
- * Gets the buffered position of the current track in seconds.
- *
- * @deprecated Use `TrackPlayer.getProgress().then((progress) => progress.buffered)` instead.
- */
-export async function getBufferedPosition(): Promise<number> {
-  return TrackPlayer.getBufferedPosition();
-}
-
-/**
- * Gets the playback position of the current track in seconds.
- * @deprecated Use `TrackPlayer.getProgress().then((progress) => progress.position)` instead.
- */
-export async function getPosition(): Promise<number> {
-  return TrackPlayer.getPosition();
 }
 
 /**
@@ -476,14 +620,8 @@ export async function getPosition(): Promise<number> {
  * duration in seconds.
  */
 export async function getProgress(): Promise<Progress> {
+  // @ts-expect-error codegen issues
   return TrackPlayer.getProgress();
-}
-
-/**
- * @deprecated use (await getPlaybackState()).state instead.
- */
-export async function getState(): Promise<State> {
-  return (await TrackPlayer.getPlaybackState()).state;
 }
 
 /**
@@ -492,6 +630,7 @@ export async function getState(): Promise<State> {
  * @see https://rntp.dev/docs/api/constants/state
  */
 export async function getPlaybackState(): Promise<PlaybackState> {
+  // @ts-expect-error codegen issues
   return TrackPlayer.getPlaybackState();
 }
 
@@ -509,4 +648,144 @@ export async function getRepeatMode(): Promise<RepeatMode> {
  */
 export async function retry() {
   return TrackPlayer.retry();
+}
+
+/**
+ * Sets the content hierarchy of Android Auto (Android only). The hierarchy structure is a dict with
+ * the mediaId as keys, and a list of MediaItem as values. To use, you must at least specify the root directory, where
+ * the key is "/". If the root directory contains BROWSABLE MediaItems, they will be shown as tabs. Do note Google requires
+ * AA to have a max of 4 tabs. You may then set the mediaId keys of the browsable MediaItems to be a list of other MediaItems.
+ *
+ * @param browseTree the content hierarchy dict.
+ * @returns a serialized copy of the browseTree set by native. For debug purposes.
+ */
+export async function setBrowseTree(
+  browseTree: AndroidAutoBrowseTree,
+): Promise<string> {
+  if (!isAndroid) return new Promise(() => '');
+  return TrackPlayer.setBrowseTree(browseTree);
+}
+
+/**
+ * this method enables android auto playback progress tracking; see
+ * https://developer.android.com/training/cars/media#browse-progress-bar
+ * android only.
+ * @param mediaID the mediaID.
+ * @returns
+ */
+export async function setPlaybackState(mediaID: string): Promise<void> {
+  if (!isAndroid) return;
+  TrackPlayer.setPlaybackState(mediaID);
+}
+
+/**
+ * Sets the content style of Android Auto (Android only).
+ * there are list style and grid style. see https://developer.android.com/training/cars/media#apply_content_style .
+ * the styles are applicable to browsable nodes and playable nodes. setting the args to true will yield the list style.
+ * false = the grid style.
+ */
+export function setBrowseTreeStyle(
+  browsableStyle: AndroidAutoContentStyle,
+  playableStyle: AndroidAutoContentStyle,
+): null {
+  if (!isAndroid) return null;
+  TrackPlayer.setBrowseTreeStyle(browsableStyle, playableStyle);
+  return null;
+}
+
+/**
+ * acquires the wake lock of MusicService (android only.)
+ */
+export async function acquireWakeLock() {
+  if (!isAndroid) return;
+  TrackPlayer.acquireWakeLock();
+}
+
+/**
+ * acquires the wake lock of MusicService (android only.)
+ */
+export async function abandonWakeLock() {
+  if (!isAndroid) return;
+  TrackPlayer.abandonWakeLock();
+}
+
+/**
+ * prepare to crossfade (android only.) the crossfade alternate
+ * player will be automatically primed to the current player's index,
+ * then by previous = true or not, skip to previous or next. player
+ * will be prepared. its advised to call this well before actually performing
+ * crossfade so the resource can be prepared.
+ */
+export async function crossFadePrepare(previous = false, seekTo = 0) {
+  if (!isAndroid) return;
+  TrackPlayer.crossFadePrepare(previous, seekTo);
+}
+
+/**
+ * perform crossfade (android only).
+ *
+ * fadeDuration and fadeInterval are both in ms.
+ *
+ * fadeToVolume is a float from 0-1.
+ *
+ * waitUntil is in ms.
+ */
+export async function crossFade(
+  fadeDuration = 2000,
+  fadeInterval = 20,
+  fadeToVolume = 1,
+  waitUntil = 0,
+) {
+  if (!isAndroid) return;
+  TrackPlayer.switchExoPlayer(
+    fadeDuration,
+    fadeInterval,
+    fadeToVolume,
+    waitUntil,
+  );
+}
+
+/**
+ * get the last connected package. non android will return undefined.
+ *
+ * android without a connected package (either system.UI, android auto, or media controller) yet
+ * will return ''; else will be one of the three.
+ *
+ * I intend to use this to determine if app crashed from android auto.
+ */
+export async function getLastConnectedPackage(): Promise<string | undefined> {
+  if (!isAndroid) return;
+  return TrackPlayer.getLastConnectedPackage();
+}
+
+/**
+ * android only. set loudnessEnhance via audiofx's loudnessEnhancer. gain is in mB (1dB=100mB)
+ */
+export async function setLoudnessEnhance(gain = 0) {
+  if (!isAndroid) return;
+  TrackPlayer.setLoudnessEnhance(gain);
+}
+
+/**
+ * android only. set equalizer preset.
+ */
+export async function setEqualizerPreset(preset = 0) {
+  if (!isAndroid) return;
+  TrackPlayer.setEqualizerPreset(preset);
+}
+
+/**
+ * android only. get the current equalizer preset index (int).
+ */
+export async function getCurrentEqualizerPreset(): Promise<number> {
+  if (!isAndroid) return -1;
+  return TrackPlayer.getCurrentEqualizerPreset();
+}
+
+/**
+ * android only. get the current eq preset names.
+ */
+export async function getEqualizerPresets(): Promise<string[]> {
+  if (!isAndroid) return [];
+  return TrackPlayer.getEqualizerPresets();
 }
