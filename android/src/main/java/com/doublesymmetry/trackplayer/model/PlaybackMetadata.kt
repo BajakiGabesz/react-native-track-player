@@ -1,13 +1,16 @@
 package com.doublesymmetry.trackplayer.model
 
-import com.google.android.exoplayer2.metadata.Metadata
-import com.google.android.exoplayer2.metadata.flac.VorbisComment
-import com.google.android.exoplayer2.metadata.icy.IcyHeaders
-import com.google.android.exoplayer2.metadata.icy.IcyInfo
-import com.google.android.exoplayer2.metadata.id3.TextInformationFrame
-import com.google.android.exoplayer2.metadata.id3.UrlLinkFrame
-import com.google.android.exoplayer2.metadata.mp4.MdtaMetadataEntry
+import androidx.annotation.OptIn
+import androidx.media3.common.Metadata
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.extractor.metadata.vorbis.VorbisComment
+import androidx.media3.extractor.metadata.icy.IcyHeaders
+import androidx.media3.extractor.metadata.icy.IcyInfo
+import androidx.media3.extractor.metadata.id3.TextInformationFrame
+import androidx.media3.extractor.metadata.id3.UrlLinkFrame
+import androidx.media3.container.MdtaMetadataEntry
 
+@OptIn(UnstableApi::class)
 data class PlaybackMetadata(
     val source: String,
     var title: String? = null,
@@ -38,23 +41,23 @@ data class PlaybackMetadata(
                         when (entry.id.uppercase()) {
                             "TIT2", "TT2" -> {
                                 handled = true
-                                title = entry.value
+                                title = entry.values[0]
                             }
                             "TALB", "TOAL", "TAL" -> {
                                 handled = true
-                                album = entry.value
+                                album = entry.values[0]
                             }
                             "TOPE", "TPE1", "TP1" -> {
                                 handled = true
-                                artist = entry.value
+                                artist = entry.values[0]
                             }
                             "TDRC", "TOR" -> {
                                 handled = true
-                                date = entry.value
+                                date = entry.values[0]
                             }
                             "TCON", "TCO" -> {
                                 handled = true
-                                genre = entry.value
+                                genre = entry.values[0]
                             }
 
                         }
@@ -62,8 +65,8 @@ data class PlaybackMetadata(
                     is UrlLinkFrame -> {
                         when (entry.id.uppercase()) {
                             "WOAS", "WOAF", "WOAR", "WAR" -> {
-                                handled = true;
-                                url = entry.url;
+                                handled = true
+                                url = entry.url
                             }
                         }
                     }
@@ -110,7 +113,7 @@ data class PlaybackMetadata(
          * https://xiph.org/vorbis/doc/v-comment.html
          */
         fun fromVorbisComment(metadata: Metadata): PlaybackMetadata? {
-            var handled = false;
+            var handled = false
 
             var title: String? = null
             var url: String? = null
@@ -125,15 +128,15 @@ data class PlaybackMetadata(
                     when (entry.key) {
                         "TITLE" -> {
                             handled = true
-                            title = entry.value;
+                            title = entry.value
                         }
                         "ARTIST" -> {
                             handled = true
-                            artist = entry.value;
+                            artist = entry.value
                         }
                         "ALBUM" -> {
                             handled = true
-                            album = entry.value;
+                            album = entry.value
                         }
                         "DATE" -> {
                             handled = true
@@ -158,7 +161,7 @@ data class PlaybackMetadata(
          * https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/Metadata/Metadata.html
          */
         fun fromQuickTime(metadata: Metadata): PlaybackMetadata? {
-            var handled = false;
+            var handled = false
 
             var title: String? = null
             var artist: String? = null
@@ -167,28 +170,28 @@ data class PlaybackMetadata(
             var genre: String? = null
 
             for (i in 0 until metadata.length()) {
-                val entry = metadata[i];
+                val entry = metadata[i]
                 if (entry is MdtaMetadataEntry) {
                     when (entry.key) {
                         "com.apple.quicktime.title" -> {
                             handled = true
-                            title = entry.value.toString();
+                            title = entry.value.toString()
                         }
                         "com.apple.quicktime.artist" -> {
                             handled = true
-                            artist = entry.value.toString();
+                            artist = entry.value.toString()
                         }
                         "com.apple.quicktime.album" -> {
                             handled = true
-                            album = entry.value.toString();
+                            album = entry.value.toString()
                         }
                         "com.apple.quicktime.creationdate" -> {
                             handled = true
-                            date = entry.value.toString();
+                            date = entry.value.toString()
                         }
                         "com.apple.quicktime.genre" -> {
                             handled = true
-                            genre = entry.value.toString();
+                            genre = entry.value.toString()
                         }
                     }
                 }

@@ -14,3 +14,6 @@ export * from './RemotePlaySearchEvent';
 export * from './RemoteSeekEvent';
 export * from './RemoteSetRatingEvent';
 export * from './RemoteSkipEvent';
+export * from './RemoteBrowseEvent';
+export * from './ControllerConnectedEvent';
+export * from './FFTUpdateEvent';

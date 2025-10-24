@@ -1,4 +1,4 @@
-import Slider from '@react-native-community/slider';
+import Slider from '@react-native-assets/slider';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import TrackPlayer, { useProgress } from 'react-native-track-player';
@@ -12,10 +12,10 @@ export const Progress: React.FC<{ live?: boolean }> = ({ live }) => {
 
   return (
     <View style={styles.container}>
-      {live ? (
+      {live || duration === Infinity ? (
         <Text style={styles.liveText}>Live Stream</Text>
       ) : (
-        <>
+        <View>
           <Slider
             style={{ ...styles.slider, width: progressBarWidth }}
             value={position}
@@ -33,7 +33,7 @@ export const Progress: React.FC<{ live?: boolean }> = ({ live }) => {
               {formatSeconds(Math.max(0, duration - position))}
             </Text>
           </View>
-        </>
+        </View>
       )}
     </View>
   );

@@ -19,6 +19,7 @@ android/local.properties
 android/*.iml
 android/gradlew
 android/gradlew.bat
+.gradle/
 
 # Windows
 
@@ -56,3 +57,5 @@ example/ios/Pods
 ios/Pods
 ios/RNTrackPlayer.xcworkspace
 Podfile.lock
+local.properties
+yarn.lock

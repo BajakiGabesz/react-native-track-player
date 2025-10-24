@@ -1,6 +1,12 @@
 import Foundation
 
 enum EventType: String, CaseIterable {
+    case RemotePlayPause = "remote-play-pause"
+    case RemotePlayId = "remote-play-id"
+    case RemotePlaySearch = "remote-play-search"
+    case RemoteBrowse = "remote-browse"
+    case RemoteCustomAction = "remote-custom-action"
+
     case RemoteDuck = "remote-duck"
     case RemoteSeek = "remote-seek"
     case RemoteNext = "remote-next"
@@ -26,7 +32,12 @@ enum EventType: String, CaseIterable {
     case MetadataChapterReceived = "metadata-chapter-received"
     case MetadataTimedReceived = "metadata-timed-received"
     case MetadataCommonReceived = "metadata-common-received"
-    
+
+    case FFTUpdated = "fft-updated"
+    case ControllerConnected = "android-controller-connected"
+    case ControllerDisconnected = "android-controller-disconnected"
+    case PlaybackAnimatedVolumeChanged = "playback-animated-volume-changed"
+
     static func allRawValues() -> [String] {
         return allCases.map { $0.rawValue }
     }

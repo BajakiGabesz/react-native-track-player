@@ -1,5 +1,4 @@
-import { NativeModules } from 'react-native';
-const { TrackPlayerModule: TrackPlayer } = NativeModules;
+import {Constants as TrackPlayer} from '../../specs/NativeTrackPlayer';
 
 export enum Capability {
   Play = TrackPlayer.CAPABILITY_PLAY,

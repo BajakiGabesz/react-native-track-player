@@ -1,24 +1,28 @@
 package com.doublesymmetry.trackplayer.model
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
-import com.doublesymmetry.kotlinaudio.models.AudioItemOptions
-import com.doublesymmetry.kotlinaudio.models.MediaType
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import com.lovegaoshi.kotlinaudio.models.AudioItemOptions
+import com.lovegaoshi.kotlinaudio.models.MediaType
 import com.doublesymmetry.trackplayer.utils.BundleUtils
-import com.google.android.exoplayer2.upstream.RawResourceDataSource
 
 /**
  * @author Milen Pivchev @mpivchev
  */
-class Track(context: Context, bundle: Bundle, ratingType: Int) : TrackMetadata() {
+@OptIn(UnstableApi::class)
+class Track
+    (context: Context, bundle: Bundle, ratingType: Int) : TrackMetadata() {
     var uri: Uri? = null
     var resourceId: Int?
     var type = MediaType.DEFAULT
     var contentType: String?
     var userAgent: String?
     var originalItem: Bundle?
-    var headers: MutableMap<String, String>? = null
+    var headers: HashMap<String, String>? = null
     val queueId: Long
 
     override fun setMetadata(context: Context, bundle: Bundle?, ratingType: Int) {
@@ -28,7 +32,7 @@ class Track(context: Context, bundle: Bundle, ratingType: Int) : TrackMetadata()
 
     fun toAudioItem(): TrackAudioItem {
         return TrackAudioItem(this, type, uri.toString(), artist, title, album, artwork.toString(), duration,
-                AudioItemOptions(headers, userAgent, resourceId))
+                AudioItemOptions(headers, userAgent, resourceId), mediaId)
     }
 
     init {
@@ -37,10 +41,11 @@ class Track(context: Context, bundle: Bundle, ratingType: Int) : TrackMetadata()
             resourceId = null
             BundleUtils.getUri(context, bundle, "url")
         } else {
-            RawResourceDataSource.buildRawResourceUri(resourceId!!)
+            // RawResourceDataSource.buildRawResourceUri(resourceId!!)
+            Uri.Builder().scheme(ContentResolver.SCHEME_ANDROID_RESOURCE).path(resourceId!!.toString()).build()
         }
         val trackType = bundle.getString("type", "default")
-        for (t in MediaType.values()) {
+        for (t in MediaType.entries) {
             if (t.name.equals(trackType, ignoreCase = true)) {
                 type = t
                 break
