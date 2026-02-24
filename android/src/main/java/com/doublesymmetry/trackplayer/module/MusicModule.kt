@@ -1,4 +1,4 @@
-com.doublesymmetry.trackplayer.module
+package com.doublesymmetry.trackplayer.module
 
 import android.annotation.SuppressLint
 import android.content.*
