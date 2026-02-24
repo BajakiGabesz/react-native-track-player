@@ -1,4 +1,4 @@
-package com.doublesymmetry.trackplayer.module
+com.doublesymmetry.trackplayer.module
 
 import android.annotation.SuppressLint
 import android.content.*
@@ -415,11 +415,14 @@ class MusicModule(reactContext: ReactApplicationContext) : NativeTrackPlayerSpec
     override fun updateNowPlayingMetadata(map: ReadableMap?, callback: Promise) = launchInScope {
         if (verifyServiceBoundOrReject(callback)) return@launchInScope
 
-        if (musicService.tracks.isEmpty())
+        if (musicService.tracks.isEmpty()) {
             callback.reject("no_current_item", "There is no current item in the player")
+            return@launchInScope
+        }
 
         Arguments.toBundle(map)?.let {
-            val track = bundleToTrack(it)
+            val track = musicService.tracks[musicService.getCurrentTrackIndex()]
+            track.setMetadata(context, it, 0)
             musicService.updateNowPlayingMetadata(track)
         }
 

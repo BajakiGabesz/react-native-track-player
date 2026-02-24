@@ -31,7 +31,8 @@ class Track
     }
 
     fun toAudioItem(): TrackAudioItem {
-        return TrackAudioItem(this, type, uri.toString(), artist, title, album, artwork.toString(), duration,
+        val audioUrl = requireNotNull(uri) { "Track URL is missing or invalid" }.toString()
+        return TrackAudioItem(this, type, audioUrl, artist, title, album, artwork.toString(), duration,
                 AudioItemOptions(headers, userAgent, resourceId), mediaId)
     }
 
