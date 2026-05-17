@@ -934,8 +934,10 @@ class MusicService : HeadlessJsMediaService() {
     @MainThread
     override fun onDestroy() {
         Timber.tag("APM").d("RNTP service is destroyed.")
-        if (::player.isInitialized) {
+        if (::mediaSession.isInitialized) {
             mediaSession.release()
+        }
+        if (::player.isInitialized) {
             player.destroy()
         }
 
