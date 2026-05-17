@@ -65,6 +65,7 @@ class MusicService : HeadlessJsMediaService() {
     private lateinit var fakePlayer: ExoPlayer
     private lateinit var mediaSession: MediaLibrarySession
     private var progressUpdateJob: Job? = null
+    private var isShuttingDown = false
     var mediaTree: Map<String, List<MediaItem>> = HashMap()
     var mediaTreeStyle: List<Int> = listOf(
         MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM,
@@ -197,6 +198,10 @@ class MusicService : HeadlessJsMediaService() {
     private var commandStarted = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (isShuttingDown) {
+            Timber.tag("APM").d("Ignoring onStartCommand after shutdown: ${intent?.action}, ${intent?.`package`}")
+            return START_NOT_STICKY
+        }
         Timber.tag("APM").d("onStartCommand: ${intent?.action}, ${intent?.`package`}")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             // HACK: this is not supposed to be here. I definitely screwed up. but Why?
@@ -827,6 +832,10 @@ class MusicService : HeadlessJsMediaService() {
 
     @MainThread
     override fun onBind(intent: Intent?): IBinder? {
+        if (isShuttingDown) {
+            Timber.tag("APM").d("Ignoring onBind after shutdown: ${intent?.action}")
+            return null
+        }
         val intentAction = intent?.action
         Timber.tag("APM").d("onbind: $intentAction")
         return if (intentAction != null) {
@@ -861,6 +870,7 @@ class MusicService : HeadlessJsMediaService() {
             AppKilledPlaybackBehavior.PAUSE_PLAYBACK -> player.pause()
             AppKilledPlaybackBehavior.STOP_PLAYBACK_AND_REMOVE_NOTIFICATION -> {
                 Timber.tag("APM").d("onTaskRemoved: Killing service")
+                isShuttingDown = true
                 mediaSession.release()
                 player.clear()
                 player.stop()
@@ -934,6 +944,7 @@ class MusicService : HeadlessJsMediaService() {
     @MainThread
     override fun onDestroy() {
         Timber.tag("APM").d("RNTP service is destroyed.")
+        isShuttingDown = true
         if (::mediaSession.isInitialized) {
             mediaSession.release()
         }
