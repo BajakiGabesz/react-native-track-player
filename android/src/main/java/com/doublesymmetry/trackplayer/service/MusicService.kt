@@ -603,6 +603,9 @@ class MusicService : HeadlessJsMediaService() {
     @MainThread
     fun updateMetadataForTrack(index: Int, track: Track) {
         player.replaceItem(index, track.toAudioItem())
+        if (::mediaSession.isInitialized && index == player.currentIndex) {
+            mediaSession.invalidatePlatformVersion()
+        }
     }
 
     @MainThread
