@@ -61,6 +61,7 @@ public class ForwardingPlayer implements Player {
     public void broadcastMediaItem() {
         MediaItem currentMediaItem = player.getCurrentMediaItem();
         if (currentMediaItem != null) {
+            int refreshToken = (int) (System.nanoTime() & 0x7FFFFFFF);
             // force trigger mediaEventChanged event
             player.replaceMediaItem(
                     player.getCurrentMediaItemIndex(),
@@ -71,7 +72,7 @@ public class ForwardingPlayer implements Player {
                                             .mediaMetadata
                                             .buildUpon()
                                             // use a deprecated field hoping noone will use
-                                            .setYear(currentMediaItem.hashCode())
+                                            .setYear(refreshToken)
                                             .build()
                             ).build()
             );
